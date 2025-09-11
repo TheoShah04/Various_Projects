@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build cpp",
+      "type": "shell",
+      "command": "g++",
+      "args": ["-g", "bitonicSort/*.cpp", "-o", "bitonicSort/sortedList"],
+      "group": { "kind": "build", "isDefault": true }
+    }
+  ]
+}
