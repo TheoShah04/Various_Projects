@@ -1,6 +1,5 @@
 module compSwap #(
-        parameter WIDTH = 32;
-        parameter DEPTH = 8;
+        parameter WIDTH = 32
     )(
         input logic [0:WIDTH-1] A_in,
         input logic [0:WIDTH-1] B_in,

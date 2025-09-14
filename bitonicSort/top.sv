@@ -16,6 +16,7 @@ module top #(
         .stage1_in(unsorted),
         .stage1_out(stage1_out)
     );
+
     logic [0:WIDTH-1] stage2_in [0:DEPTH-1];
     logic [0:WIDTH-1] stage2_out [0:DEPTH-1];
     stage2 stage2Module (
@@ -24,6 +25,7 @@ module top #(
         .stage2_in(stage2_in),
         .stage2_out(stage2_out)
     );
+    
     logic [0:WIDTH-1] stage3_in [0:DEPTH-1];
     logic [0:WIDTH-1] stage3_out [0:DEPTH-1];
     stage3 stage3Module (
