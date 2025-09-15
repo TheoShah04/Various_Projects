@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module tb_top;
+module tb_top_single;
 
     // Parameters
     localparam int WIDTH = 32;
@@ -53,10 +53,10 @@ module tb_top;
     end
 
     // VCD dump setup
-    initial begin
-        $dumpfile("waveform.vcd");   // VCD output filename
-        $dumpvars(0, tb_top);        // dump everything under tb_top (incl. DUT)
-    end
+    // initial begin
+    //     $dumpfile("waveform.vcd");   // VCD output filename
+    //     $dumpvars(0, tb_top);        // dump everything under tb_top (incl. DUT)
+    // end
 
     // Test procedure
     initial begin
