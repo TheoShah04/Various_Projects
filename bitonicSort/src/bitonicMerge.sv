@@ -34,6 +34,8 @@ module bitonicMerge #(
                     .B_out(comp_out[i+NUM])
                 );
             end
+
+
             bitonicMerge #(
                 .DEPTH(NUM),
                 .WIDTH(WIDTH),
@@ -46,6 +48,8 @@ module bitonicMerge #(
                 .seq_out(left_out),
                 .valid_out(valid_out_left)
             );
+
+
             bitonicMerge #(
                 .DEPTH(NUM),
                 .WIDTH(WIDTH),
@@ -60,16 +64,14 @@ module bitonicMerge #(
             );
 
             always_ff @ (posedge clk) begin
-                if (valid_in) begin
+                valid_in_comp <= valid_in;
+                if (valid_in_comp) begin
                     {<<{seq_inter}} <= {<<{comp_out}};
-                    valid_in_comp <= valid_in;
-                    valid_in_merge <= valid_in_comp;
                 end
                 else begin
                     seq_inter <= '{default: '0};
-                    valid_in_comp <= valid_in;
-                    valid_in_merge <= valid_in_comp;
                 end
+                valid_in_merge <= valid_in_comp;
             end
 
             always_ff @ (posedge clk) begin

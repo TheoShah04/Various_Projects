@@ -52,6 +52,12 @@ module tb_top;
         rst = 0;
     end
 
+    // VCD dump setup
+    initial begin
+        $dumpfile("waveform.vcd");   // VCD output filename
+        $dumpvars(0, tb_top);        // dump everything under tb_top (incl. DUT)
+    end
+
     // Test procedure
     initial begin
         logic [WIDTH-1:0] test_vec [DEPTH];
