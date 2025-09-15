@@ -4,10 +4,10 @@ module compSwap #(
     )(
         input logic clk,
         input logic rst,
-        input logic [0:WIDTH-1] A_in,
-        input logic [0:WIDTH-1] B_in,
-        output logic [0:WIDTH-1] A_out,
-        output logic [0:WIDTH-1] B_out
+        input logic signed [0:WIDTH-1] A_in,
+        input logic signed [0:WIDTH-1] B_in,
+        output logic signed [0:WIDTH-1] A_out,
+        output logic signed [0:WIDTH-1] B_out
     );
 
     always_ff @ (posedge clk) begin

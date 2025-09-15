@@ -10,8 +10,8 @@ module tb_top_multiple;
     logic clk;
     logic rst;
     logic valid_in;
-    logic [WIDTH-1:0] unsorted [DEPTH-1:0];
-    logic [WIDTH-1:0] sorted   [DEPTH-1:0];
+    logic signed [WIDTH-1:0] unsorted [DEPTH-1:0];
+    logic signed [WIDTH-1:0] sorted   [DEPTH-1:0];
     logic valid_out;
 
     // DUT instance
@@ -31,18 +31,6 @@ module tb_top_multiple;
     initial clk = 0;
     always #5 clk = ~clk;
 
-    // Task to apply one vector of inputs
-    task automatic apply_input(input logic [WIDTH-1:0] data [DEPTH]);
-        begin
-            @(posedge clk);
-            valid_in <= 1;
-            unsorted <= data;
-            @(posedge clk);
-            valid_in <= 0;
-            unsorted <= '{default:'0};
-        end
-    endtask
-
     // Reset sequence
     initial begin
         rst = 1;
@@ -58,45 +46,97 @@ module tb_top_multiple;
     //     $dumpvars(0, tb_top);
     // end
 
-    // Test procedure
-    initial begin
-        // Define a set of test vectors and their expected outputs
-        logic [WIDTH-1:0] test_vecs   [3][DEPTH];  // 3 test cases
-        logic [WIDTH-1:0] expected    [3][DEPTH];
-        automatic int num_tests = 3;
+    // === Input/Output scheduling ===
+    typedef logic signed [WIDTH-1:0] vec_t [DEPTH];
+    vec_t test_vecs[$];      // dynamic array for test inputs
+    vec_t expected_q[$];     // queue of expected outputs
 
-        // Test 1
-        test_vecs[0] = '{32'd10, 32'd3, 32'd25, 32'd7, 32'd1, 32'd18, 32'd2, 32'd5};
-        expected [0] = '{32'd1, 32'd2, 32'd3, 32'd5, 32'd7, 32'd10, 32'd18, 32'd25};
-
-        // Test 2
-        test_vecs[1] = '{32'd8, 32'd6, 32'd4, 32'd2, 32'd1, 32'd3, 32'd5, 32'd7};
-        expected [1] = '{32'd1, 32'd2, 32'd3, 32'd4, 32'd5, 32'd6, 32'd7, 32'd8};
-
-        // Test 3
-        test_vecs[2] = '{32'd100, 32'd50, 32'd75, 32'd25, 32'd10, 32'd5, 32'd1, 32'd0};
-        expected [2] = '{32'd0, 32'd1, 32'd5, 32'd10, 32'd25, 32'd50, 32'd75, 32'd100};
-
-        // Wait for reset deassertion
-        @(negedge rst);
-
-        // Loop through all tests
-        for (int t = 0; t < num_tests; t++) begin
-            apply_input(test_vecs[t]);
-
-            // Wait until DUT produces valid output
-            wait (valid_out);
-
-            // Check result
-            if (sorted !== expected[t]) begin
-                $error("Test %0d FAILED! Got: %p Expected: %p", t, sorted, expected[t]);
-            end else begin
-                $display("Test %0d PASSED! Sorted output: %p", t, sorted);
+    function vec_t sort_array(vec_t arr);
+        vec_t tmp;
+        tmp = arr;
+        // Simple bubble sort in SV for expected output
+        for (int i = 0; i < DEPTH-1; i++) begin
+            for (int j = 0; j < DEPTH-1-i; j++) begin
+                if (tmp[j] > tmp[j+1]) begin
+                    logic signed [WIDTH-1:0] t;
+                    t = tmp[j];
+                    tmp[j] = tmp[j+1];
+                    tmp[j+1] = t;
+                end
             end
         end
+        return tmp;
+    endfunction
 
-        // Finish simulation
-        #20 $finish;
+    initial begin
+        vec_t v;
+
+        // Edge case 1: all zeros
+        v = '{0,0,0,0,0,0,0,0};
+        test_vecs.push_back(v);
+        expected_q.push_back(sort_array(v));
+
+        // Edge case 2: all same positive numbers
+        v = '{7,7,7,7,7,7,7,7};
+        test_vecs.push_back(v);
+        expected_q.push_back(sort_array(v));
+
+        // Edge case 3: all same negative numbers
+        v = '{-5,-5,-5,-5,-5,-5,-5,-5};
+        test_vecs.push_back(v);
+        expected_q.push_back(sort_array(v));
+
+        // Edge case 4: mixed negative and positive
+        v = '{-10,5,0,-3,2,7,-1,4};
+        test_vecs.push_back(v);
+        expected_q.push_back(sort_array(v));
+
+        // Edge case 5: min/max 32-bit signed values
+        v = '{-2147483648,2147483647,0,-1,1,123,-123,0};
+        test_vecs.push_back(v);
+        expected_q.push_back(sort_array(v));
+
+        // Edge case 6: random mix in range
+        v = '{100,-100,0,2147483647,-2147483648,50,-50,0};
+        test_vecs.push_back(v);
+        expected_q.push_back(sort_array(v));
+
+        // Wait reset deassertion
+        @(negedge rst);
+
+        // === Drive inputs back-to-back with no gaps ===
+        foreach (test_vecs[i]) begin
+            @(posedge clk);
+            valid_in <= 1;
+            unsorted <= test_vecs[i];
+        end
+
+        // Deassert after last input
+        @(posedge clk);
+        valid_in <= 0;
+        unsorted <= '{default:'0};
+    end
+
+    // === Monitor outputs and check ===
+    always_ff @(posedge clk) begin
+        if (valid_out) begin
+            if (expected_q.size() == 0) begin
+                $error("Unexpected valid_out with no expected results!");
+            end else begin
+                vec_t exp = expected_q.pop_front();
+                if (sorted !== exp) begin
+                    $error("Mismatch! Got %p Expected %p", sorted, exp);
+                end else begin
+                    $display("PASS at %0t: %p", $time, sorted);
+                end
+            end
+        end
+    end
+
+    // End simulation once all outputs observed
+    initial begin
+        wait (expected_q.size() == 0);
+        #50 $finish;
     end
 
 endmodule
