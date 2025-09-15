@@ -16,15 +16,17 @@ module bitonicSort #(
     generate
         if (DEPTH == 1) begin
             always_ff @ (posedge clk) begin
-                {<<{seq_out}} <= {<<{seq_in}};
+                for (int j = 0; j < DEPTH; j++) begin
+                    seq_out[j] <= seq_in[j];
+                end  
                 valid_out <= valid_in;
             end
         end
         else begin
-            logic [WIDTH-1:0] left_out [0:NUM-1];
-            logic [WIDTH-1:0] right_out[0:NUM-1];
-            logic [0:WIDTH-1] seq_in_merge [0:DEPTH-1];
-            logic [0:WIDTH-1] seq_out_merge [0:DEPTH-1];
+            logic [WIDTH-1:0] left_out [NUM-1:0];
+            logic [WIDTH-1:0] right_out[NUM-1:0];
+            logic [WIDTH-1:0] seq_in_merge [DEPTH-1:0];
+            logic [WIDTH-1:0] seq_out_merge [DEPTH-1:0];
             logic valid_out_left, valid_out_right, valid_in_merge, valid_out_merge;
             bitonicSort #(
                 .DEPTH(NUM),
@@ -78,7 +80,9 @@ module bitonicSort #(
 
             always_ff @ (posedge clk) begin
                 if (valid_out_merge) begin
-                    {<<{seq_out}} <= {<<{seq_out_merge}};
+                    for (int j = 0; j < DEPTH; j++) begin
+                        seq_out[j] <= seq_out_merge[j];
+                    end 
                     valid_out <= 1'b1;
                 end
                 else begin

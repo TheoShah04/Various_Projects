@@ -66,7 +66,9 @@ module bitonicMerge #(
             always_ff @ (posedge clk) begin
                 valid_in_comp <= valid_in;
                 if (valid_in_comp) begin
-                    {<<{seq_inter}} <= {<<{comp_out}};
+                    for (int j = 0; j < DEPTH; j++) begin
+                        seq_inter[j] <= comp_out[j];
+                    end                
                 end
                 else begin
                     seq_inter <= '{default: '0};
@@ -90,7 +92,9 @@ module bitonicMerge #(
         end
         else begin
             always_ff @ (posedge clk) begin
-                {<<{seq_out}} <= {<<{seq_in}};
+                for (int j = 0; j < DEPTH; j++) begin
+                        seq_out[j] <= seq_in[j];
+                end  
                 valid_out <= valid_in;
             end
         end
