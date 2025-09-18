@@ -91,10 +91,8 @@ module tb_uart_sort;
         send_uart_int(32'd04);
         send_uart_int(32'd05);
 
-        send_uart_int(32'd03);
-
         // Done
-        #100000;
+        #300000;
         $stop;
     end
 

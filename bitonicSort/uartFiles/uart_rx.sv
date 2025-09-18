@@ -12,6 +12,7 @@ module uart_rx #(
 
     localparam integer BAUD_CNT = CLK_FREQ / BAUD; //number of clock cycles per bit
     localparam integer HALF_BAUD = BAUD_CNT / 2; //half cycle so that we sample rx line in the middle of data transmissions
+    int unsigned idle_cnt;
 
     typedef enum logic [1:0] {IDLE, START, DATA, STOP} state_t;
     state_t state;
@@ -27,14 +28,18 @@ module uart_rx #(
             bit_idx <= 0;
             valid_out <= 0;
             data_end <= 0;
+            idle_cnt <= 0;
         end else begin
             valid_out <= 1'b0;
-            data_end <= 1'b0;
 
             case (state)
                 IDLE:   if (!rx) begin // start bit detected
                             state <= START;
                             baud_cnt <= HALF_BAUD;
+                            idle_cnt <= 0;
+                        end
+                        else begin
+                            idle_cnt <= idle_cnt + 1;
                         end
                 START:  if (baud_cnt == 0) begin
                             state <= DATA;
@@ -57,11 +62,13 @@ module uart_rx #(
                             data <= shift_reg;
                             valid_out <= 1'b1;
                             state <= IDLE;
-                            if (shift_reg == 8'h03) data_end <= 1'b1;
                         end else begin
                             baud_cnt <= baud_cnt - 1;
                         end
             endcase
         end
     end
+
+    assign data_end = (idle_cnt == 20_000); //Enough idle time to assume end of transmission (20,000 clk cycles)
+
 endmodule
