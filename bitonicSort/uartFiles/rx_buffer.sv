@@ -33,24 +33,29 @@ module rx_buffer #(
             int_index <= '0;
             array_index <= '0;
             currentState <= LOADING;
+            unloading_index <= '0;
         end
         else begin
             currentState <= nextState;
+            valid_out <= 1'b0;
             if (nextState == LOADING) begin
-                if (!data_end && valid_in) begin
-                    if (int_index == DEPTH-1) begin
-                        if (array_index == NUM_SEQ-1) begin
-                            array_index <= '0;
-                        end
-                        else begin
-                            array_index <= array_index + 1;
-                        end
-                    end
-                    if (byte_index == 2'b11) begin
-                        int_index <= int_index + 1;
-                    end
-                    byte_index <= byte_index + 1;
+                unloading_index <= '0;
+                if (valid_in && !data_end) begin
                     data_buffer[array_index][int_index][8*byte_index+:8] <= byte_in;
+                    if (byte_index == 2'b11) begin
+                        byte_index <= '0;
+                        if (int_index == DEPTH-1) begin
+                            int_index <= '0;
+                            if (array_index == NUM_SEQ-1)
+                                array_index <= '0;
+                            else
+                                array_index <= array_index + 1;
+                        end else begin
+                            int_index <= int_index + 1;
+                        end
+                    end else begin
+                        byte_index <= byte_index + 1;
+                    end
                 end
             end
             else begin //UNLOADING state
@@ -70,7 +75,7 @@ module rx_buffer #(
         end
     end
 
-    assign buffer_empty = (unloading_index == array_index);
+    assign buffer_empty = (unloading_index == array_index)  && (currentState == UNLOADING);
 
     always_comb begin
         case (currentState)
