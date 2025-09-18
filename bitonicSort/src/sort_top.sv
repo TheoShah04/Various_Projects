@@ -1,4 +1,4 @@
-module top #(
+module sort_top #(
     parameter WIDTH = 32,
     parameter DEPTH = 8
     )

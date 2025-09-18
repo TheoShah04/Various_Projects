@@ -15,7 +15,7 @@ module tb_top_multiple;
     logic valid_out;
 
     // DUT instance
-    top #(
+    sort_top #(
         .WIDTH(WIDTH),
         .DEPTH(DEPTH)
     ) dut (

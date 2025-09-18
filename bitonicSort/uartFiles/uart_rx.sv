@@ -6,7 +6,8 @@ module uart_rx #(
     input  logic rst,
     input  logic rx,        // UART line from laptop (FTDI TX)
     output logic [7:0] data,
-    output logic valid_out      // High for 1 cycle when byte received
+    output logic valid_out,      // High for 1 cycle when byte received
+    output logic data_end
 );
 
     localparam integer BAUD_CNT = CLK_FREQ / BAUD; //number of clock cycles per bit
@@ -25,8 +26,10 @@ module uart_rx #(
             baud_cnt <= 0;
             bit_idx <= 0;
             valid_out <= 0;
+            data_end <= 0;
         end else begin
             valid_out <= 1'b0;
+            data_end <= 1'b0;
 
             case (state)
                 IDLE:   if (!rx) begin // start bit detected
@@ -54,6 +57,7 @@ module uart_rx #(
                             data <= shift_reg;
                             valid_out <= 1'b1;
                             state <= IDLE;
+                            if (shift_reg == 8'h03) data_end <= 1'b1;
                         end else begin
                             baud_cnt <= baud_cnt - 1;
                         end
