@@ -9,8 +9,8 @@ module uart_sort_top #(
     output logic uart_tx
 );
 
-    logic [7:0] rx_data;
-    logic rx_valid, tx_busy, end_of_data, start_sort, valid_sort;
+    logic [7:0] rx_data, tx_data;
+    logic rx_valid, tx_busy, end_of_data, start_sort, valid_sort, tx_valid, tx_buffer_full;
     logic [0:WIDTH-1] seq_in [0:DEPTH-1];
     logic [0:WIDTH-1] seq_out [0:DEPTH-1];
 
@@ -42,13 +42,24 @@ module uart_sort_top #(
         .valid_out(valid_sort)
     );
 
-    // uart_tx #(.CLK_FREQ(100_000_000), .BAUD(115200)) u_tx (
-    //     .clk(clk100),
-    //     .rst(rst),
-    //     .data(rx_data),
-    //     .start(rx_valid & ~tx_busy),
-    //     .tx(uart_tx),
-    //     .busy(tx_busy)
-    // );
+    tx_buffer #(.WIDTH(WIDTH), .DEPTH(DEPTH), .NUM_SEQ(NUM_SEQ)) tx_data_buffer (
+        .clk(clk),
+        .rst(rst),
+        .valid_in(valid_sort),
+        .tx_busy(tx_busy),
+        .array_in(seq_out),
+        .full(tx_buffer_full),
+        .byte_out(tx_data),
+        .valid_out(tx_valid)
+    );
+
+    uart_tx #(.CLK_FREQ(100_000_000), .BAUD(115200)) u_tx (
+        .clk(clk),
+        .rst(rst),
+        .data(tx_data),
+        .start(tx_valid),
+        .tx(uart_tx),
+        .busy(tx_busy)
+    );
 
 endmodule
