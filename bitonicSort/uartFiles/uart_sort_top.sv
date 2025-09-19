@@ -8,9 +8,11 @@ module uart_sort_top #(
     input  logic uart_rx,
     output logic uart_tx,
     output logic rx_led,
-    output logic tx_led
+    output logic tx_led,
+    output logic rst_led
 );
 
+    assign rst_led = rst;
     assign rx_led = uart_rx;
     assign tx_led = uart_tx; 
     
