@@ -78,6 +78,7 @@ module rx_buffer #(
     assign buffer_empty = (unloading_index == array_index)  && (currentState == UNLOADING);
 
     always_comb begin
+        nextState = LOADING;
         case (currentState)
             LOADING: begin
                 if (!data_end) nextState = LOADING;
@@ -87,6 +88,7 @@ module rx_buffer #(
                 if (!buffer_empty) nextState = UNLOADING;
                 else nextState = LOADING;
             end
+            default: nextState = LOADING;
         endcase
     end
 

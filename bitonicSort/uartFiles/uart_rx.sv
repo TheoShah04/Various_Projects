@@ -27,7 +27,6 @@ module uart_rx #(
             baud_cnt <= 0;
             bit_idx <= 0;
             valid_out <= 0;
-            data_end <= 0;
             idle_cnt <= 0;
         end else begin
             valid_out <= 1'b0;

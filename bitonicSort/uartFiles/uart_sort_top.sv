@@ -3,19 +3,24 @@ module uart_sort_top #(
     parameter DEPTH = 8,
     parameter NUM_SEQ = 10
 )(
-    input  logic clk,     // 100 MHz clock
+    input  logic CLK100MHZ,     // 100 MHz clock
     input  logic rst,
     input  logic uart_rx,
-    output logic uart_tx
+    output logic uart_tx,
+    output logic rx_led,
+    output logic tx_led
 );
 
+    assign rx_led = uart_rx;
+    assign tx_led = uart_tx; 
+    
     logic [7:0] rx_data, tx_data;
     logic rx_valid, tx_busy, end_of_data, start_sort, valid_sort, tx_valid, tx_buffer_full;
     logic [0:WIDTH-1] seq_in [0:DEPTH-1];
     logic [0:WIDTH-1] seq_out [0:DEPTH-1];
 
     uart_rx #(.CLK_FREQ(100_000_000), .BAUD(115200)) u_rx (
-        .clk(clk),
+        .clk(CLK100MHZ),
         .rst(rst),
         .rx(uart_rx),
         .data(rx_data),
@@ -24,7 +29,7 @@ module uart_sort_top #(
     );
 
     rx_buffer #(.WIDTH(WIDTH), .DEPTH(DEPTH), .NUM_SEQ(NUM_SEQ)) rx_data_buffer (
-        .clk(clk),
+        .clk(CLK100MHZ),
         .rst(rst),
         .valid_in(rx_valid),
         .data_end(end_of_data),
@@ -34,7 +39,7 @@ module uart_sort_top #(
     );
 
     sort_top #(.WIDTH(WIDTH), .DEPTH(DEPTH)) sorting_module (
-        .clk(clk),
+        .clk(CLK100MHZ),
         .rst(rst),
         .valid_in(start_sort),
         .unsorted(seq_in),
@@ -43,7 +48,7 @@ module uart_sort_top #(
     );
 
     tx_buffer #(.WIDTH(WIDTH), .DEPTH(DEPTH), .NUM_SEQ(NUM_SEQ)) tx_data_buffer (
-        .clk(clk),
+        .clk(CLK100MHZ),
         .rst(rst),
         .valid_in(valid_sort),
         .tx_busy(tx_busy),
@@ -54,7 +59,7 @@ module uart_sort_top #(
     );
 
     uart_tx #(.CLK_FREQ(100_000_000), .BAUD(115200)) u_tx (
-        .clk(clk),
+        .clk(CLK100MHZ),
         .rst(rst),
         .data(tx_data),
         .start(tx_valid),

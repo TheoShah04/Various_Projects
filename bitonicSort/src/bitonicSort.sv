@@ -16,10 +16,16 @@ module bitonicSort #(
     generate
         if (DEPTH == 1) begin
             always_ff @ (posedge clk) begin
-                for (int j = 0; j < DEPTH; j++) begin
-                    seq_out[j] <= seq_in[j];
-                end  
-                valid_out <= valid_in;
+                if (rst) begin
+                    seq_out <= '{default: '0};
+                    valid_out <= '0;
+                end
+                else begin
+                    for (int j = 0; j < DEPTH; j++) begin
+                        seq_out[j] <= seq_in[j];
+                    end  
+                    valid_out <= valid_in;
+                end
             end
         end
         else begin
@@ -65,29 +71,41 @@ module bitonicSort #(
                 .valid_out(valid_out_merge)
             );
             always_ff @ (posedge clk) begin //add rst functionality
-                if (valid_out_left && valid_out_right) begin
-                    for (int i = 0; i < NUM; i++) begin
-                        seq_in_merge[i]     <= left_out[i];
-                        seq_in_merge[NUM+i] <= right_out[i];
-                    end
-                    valid_in_merge <= 1'b1;
+                if (rst) begin
+                    seq_in_merge <= '{default: '0};
+                    valid_in_merge <= '0;
                 end
                 else begin
-                    for (int i = 0; i < DEPTH; i++) seq_in_merge[i] <= '0;
-                    valid_in_merge <= 1'b0;
+                    if (valid_out_left && valid_out_right) begin
+                        for (int i = 0; i < NUM; i++) begin
+                            seq_in_merge[i]     <= left_out[i];
+                            seq_in_merge[NUM+i] <= right_out[i];
+                        end
+                        valid_in_merge <= 1'b1;
+                    end
+                    else begin
+                        for (int i = 0; i < DEPTH; i++) seq_in_merge[i] <= '0;
+                        valid_in_merge <= 1'b0;
+                    end
                 end
             end
 
             always_ff @ (posedge clk) begin
-                if (valid_out_merge) begin
-                    for (int j = 0; j < DEPTH; j++) begin
-                        seq_out[j] <= seq_out_merge[j];
-                    end 
-                    valid_out <= 1'b1;
+                if (rst) begin
+                    seq_out <= '{default: '0};
+                    valid_out <= '0;
                 end
                 else begin
-                    for (int i = 0; i < DEPTH; i++) seq_out[i] <= '0;
-                    valid_out <= 1'b0;
+                    if (valid_out_merge) begin
+                        for (int j = 0; j < DEPTH; j++) begin
+                            seq_out[j] <= seq_out_merge[j];
+                        end 
+                        valid_out <= 1'b1;
+                    end
+                    else begin
+                        for (int i = 0; i < DEPTH; i++) seq_out[i] <= '0;
+                        valid_out <= 1'b0;
+                    end
                 end
             end
         end
