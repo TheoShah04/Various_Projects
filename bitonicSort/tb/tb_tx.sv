@@ -7,7 +7,7 @@ module tb_tx;
   localparam BAUD     = 115200;
   localparam WIDTH    = 32;
   localparam DEPTH    = 8;
-  localparam NUM_SEQ  = 4;
+  localparam NUM_SEQ  = 10;
 
   // Clock and reset
   logic clk;
@@ -19,8 +19,8 @@ module tb_tx;
   logic full;
 
   // tx_buffer → uart_tx
-  logic [7:0] byte_out;
-  logic valid_out;
+  logic [7:0] byte_out, rx_data;
+  logic valid_out, rx_valid, data_end;
 
   // uart_tx outputs
   logic tx;
@@ -49,7 +49,7 @@ module tb_tx;
   uart_tx #(
     .CLK_FREQ(CLK_FREQ),
     .BAUD(BAUD)
-  ) dut_uart (
+  ) dut_uart_tx (
     .clk(clk),
     .rst(rst),
     .data(byte_out),
@@ -58,53 +58,53 @@ module tb_tx;
     .busy(busy)
   );
 
+  uart_rx #(
+    .CLK_FREQ(CLK_FREQ),
+    .BAUD(BAUD)
+  ) dut_uart_rx (
+    .clk(clk),
+    .rst(rst),
+    .rx(tx),        // connect to DUT's TX line
+    .data(rx_data),
+    .valid_out(rx_valid),
+    .data_end(data_end)
+  );
+
   // Stimulus
   initial begin
-    // Initialize
-    rst = 1;
+    // Init
+    rst      = 1;
     valid_in = 0;
     array_in = '{default:'0};
     #100;
     rst = 0;
 
-    // Push one sequence into buffer
-    @(posedge clk);
-    valid_in = 1;
-    array_in[0] = 32'h41424344; // "ABCD"
-    array_in[1] = 32'h45464748; // "EFGH"
-    array_in[2] = 32'h494A4B4C; // "IJKL"
-    array_in[3] = 32'h4D4E4F50; // "MNOP"
-    array_in[4] = 32'h51525354; // "QRST"
-    array_in[5] = 32'h55565758; // "UVWX"
-    array_in[6] = 32'h595A3031; // "YZ01"
-    array_in[7] = 32'h32333435; // "2345"
-    @(posedge clk);
-    valid_in = 0;
-
-    // Wait for UART to transmit everything
-    repeat (200000) @(posedge clk);
-
-    // Push multiple sequences
-    foreach (array_in[i]) array_in[i] = {WIDTH{1'b1}}; // all 1s
-    valid_in = 1;
+    // Stream several sequences into tx_buffer
+    for(int j = 0; j < 8; j++) begin
+      @(posedge clk);
+      if (!full) begin
+        valid_in = 1;
+        // unique pattern per sequence
+        foreach (array_in[i]) begin
+          array_in[i] = i + j; 
+        end
+      end else begin
+        valid_in = 0; // pause if buffer full
+      end
+    end
     @(posedge clk);
     valid_in = 0;
 
-    repeat (200000) @(posedge clk);
+    // Let UART drain buffer
+    repeat (300000) @(posedge clk);
 
     $finish;
   end
 
-  // Monitor UART line
-//   initial begin
-//     $dumpfile("tb_tx.vcd");
-//     $dumpvars(0, tb_tx);
-
-//     $display("Time\tTX Busy\tTX Line");
-//     forever begin
-//       @(posedge clk);
-//       $display("%0t\t%b\t%b", $time, busy, tx);
-//     end
-//   end
+  always @(posedge clk) begin
+    if (rx_valid) begin
+      $display("[%0t] RX got byte: %02x", $time, rx_data);
+    end
+  end
 
 endmodule

@@ -36,7 +36,7 @@ module tx_buffer #(
             rd_ptr <= '0;
             count <= '0;
             int_index <= DEPTH-1;
-            byte_index <= 2'b11;
+            byte_index <= '0;
             byte_out <= '0;
             valid_out <= 1'b0;
         end else begin
@@ -50,8 +50,8 @@ module tx_buffer #(
                 valid_out <= 1'b1;
                 byte_out <= data_buffer[rd_ptr][int_index][8*byte_index +: 8];
 
-                if (byte_index == 0) begin
-                    byte_index <= 2'b11;
+                if (byte_index == 2'b11) begin
+                    byte_index <= '0;
                     if (int_index == 0) begin //Completed one full read of a sequence
                         int_index <= DEPTH-1;
                         rd_ptr <= rd_ptr + 1;
@@ -60,7 +60,7 @@ module tx_buffer #(
                         int_index <= int_index - 1;
                     end
                 end else begin
-                    byte_index <= byte_index - 1;
+                    byte_index <= byte_index + 1;
                 end
             end else begin
                 valid_out <= 1'b0;
