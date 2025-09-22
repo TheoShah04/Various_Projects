@@ -21,13 +21,35 @@ module uart_sort_top #(
     logic [0:WIDTH-1] seq_in [0:DEPTH-1];
     logic [0:WIDTH-1] seq_out [0:DEPTH-1];
 
+    logic [WIDTH*DEPTH-1:0] seq_in_flat;
+    logic [WIDTH*DEPTH-1:0] seq_out_flat;
+    genvar k;
+    generate
+        for (k = 0; k < DEPTH; k++) begin
+            assign seq_in_flat[(k+1)*WIDTH-1 -: WIDTH] = seq_in[k];
+            assign seq_out_flat[(k+1)*WIDTH-1 -: WIDTH] = seq_out[k];
+        end
+    endgenerate
+
+    ila_0 ILA (
+	.clk(CLK100MHZ), // input wire clk
+	.probe0(uart_rx), // input wire [0:0]  probe0  
+	.probe1(rx_data), // input wire [7:0]  probe1 
+	.probe2(rx_valid), // input wire [0:0]  probe2 
+	.probe3(end_of_data), // input wire [0:0]  probe3 
+	.probe4(seq_in_flat), // input wire [255:0]  probe4 
+	.probe5(start_sort), // input wire [0:0]  probe5 
+	.probe6(valid_sort), // input wire [0:0]  probe6 
+	.probe7(seq_out_flat) // input wire [255:0]  probe7
+    );
+
     uart_rx #(.CLK_FREQ(100_000_000), .BAUD(115200)) u_rx (
         .clk(CLK100MHZ),
         .rst(rst),
-        .rx(uart_rx),
-        .data(rx_data),
-        .valid_out(rx_valid),
-        .data_end(end_of_data)
+        .rx(uart_rx), //port 0
+        .data(rx_data), //port 1
+        .valid_out(rx_valid), //port 2
+        .data_end(end_of_data) //port 3
     );
 
     rx_buffer #(.WIDTH(WIDTH), .DEPTH(DEPTH), .NUM_SEQ(NUM_SEQ)) rx_data_buffer (
@@ -36,8 +58,8 @@ module uart_sort_top #(
         .valid_in(rx_valid),
         .data_end(end_of_data),
         .byte_in(rx_data),
-        .array_out(seq_in),
-        .valid_out(start_sort)
+        .array_out(seq_in), //port 4
+        .valid_out(start_sort) //port 5
     );
 
     sort_top #(.WIDTH(WIDTH), .DEPTH(DEPTH)) sorting_module (
@@ -52,9 +74,9 @@ module uart_sort_top #(
     tx_buffer #(.WIDTH(WIDTH), .DEPTH(DEPTH), .NUM_SEQ(NUM_SEQ)) tx_data_buffer (
         .clk(CLK100MHZ),
         .rst(rst),
-        .valid_in(valid_sort),
-        .tx_busy(tx_busy),
-        .array_in(seq_out),
+        .valid_in(valid_sort), //port 6
+        .tx_busy(tx_busy), 
+        .array_in(seq_out), //port 7
         .full(tx_buffer_full),
         .byte_out(tx_data),
         .valid_out(tx_valid)
