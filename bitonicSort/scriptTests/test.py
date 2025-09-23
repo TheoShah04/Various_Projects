@@ -3,14 +3,12 @@ import struct
 import random
 import time
 
-# --- Config ---
 COM_PORT = "COM6"
 BAUD = 115200
 WIDTH = 32   # FPGA data width in bits
 DEPTH = 8    # number of elements per array
 TIMEOUT = 0.1  # UART read timeout in seconds
 
-# --- Helpers ---
 def send_array(ser, arr):
     """Send an array of integers as binary words."""
     for val in arr:
@@ -24,7 +22,6 @@ def read_available(ser):
         data = ser.read(n)
         print("RX:", ' '.join(f"{b:02X}" for b in data))
 
-# --- Main ---
 def main():
     ser = serial.Serial(COM_PORT, BAUD, timeout=TIMEOUT)
     time.sleep(0.1)  # let UART settle
@@ -58,9 +55,9 @@ def main():
                 rx_array = list(struct.unpack("<" + "I"*DEPTH, received))
                 print(f"RX full array: {rx_array}")
                 if rx_array == sorted(arr):
-                    print("✅ PASS")
+                    print("PASS")
                 else:
-                    print("❌ FAIL")
+                    print("FAIL")
             else:
                 print(f"RX incomplete ({len(received)} bytes)")
 

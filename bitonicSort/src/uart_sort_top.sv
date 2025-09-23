@@ -8,12 +8,21 @@ module uart_sort_top #(
     input  logic uart_rx,
     output logic uart_tx,
     output logic rx_led,
+    output logic rx_trg_led,
     output logic tx_led,
     output logic rst_led
 );
 
     assign rst_led = rst;
     assign rx_led = uart_rx;
+    always_ff @ (posedge CLK100MHZ) begin
+        if (rst) begin
+            rx_led <= 1'b0;
+        end
+        else begin
+            if (uart_rx == 1'b0) rx_trg_led <= 1'b1;
+        end
+    end
     assign tx_led = uart_tx; 
     
     logic [7:0] rx_data, tx_data;
@@ -36,7 +45,7 @@ module uart_sort_top #(
 	.probe0(uart_rx), // input wire [0:0]  probe0  
 	.probe1(rx_data), // input wire [7:0]  probe1 
 	.probe2(rx_valid), // input wire [0:0]  probe2 
-	.probe3(end_of_data), // input wire [0:0]  probe3 
+	.probe3(rst), // input wire [0:0]  probe3 
 	.probe4(seq_in_flat), // input wire [255:0]  probe4 
 	.probe5(start_sort), // input wire [0:0]  probe5 
 	.probe6(valid_sort), // input wire [0:0]  probe6 
